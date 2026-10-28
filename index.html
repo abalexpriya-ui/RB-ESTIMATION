@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RB Motors - Estimation</title>
+<style>
+  :root{
+    --ink:#1a1a1a;
+    --line:#333;
+    --accent:#b91c1c;
+    --muted:#666;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:#e9e9e9;
+    margin:0;
+    padding:20px;
+    color:var(--ink);
+  }
+  .hidden{display:none !important;}
+  .sheet{
+    max-width:850px;
+    margin:0 auto;
+    background:#fff;
+    border:2px solid var(--line);
+    padding:24px 28px;
+  }
+  .header{
+    text-align:center;
+    border-bottom:3px double var(--line);
+    padding-bottom:10px;
+    margin-bottom:14px;
+  }
+  .header h1{
+    margin:0;
+    font-size:30px;
+    letter-spacing:2px;
+    color:var(--accent);
+  }
+  .header .tagline{
+    font-size:13px;
+    letter-spacing:1px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+  .header .addr{
+    font-size:12.5px;
+    margin-top:6px;
+    color:#333;
+  }
+  .title-bar{
+    text-align:center;
+    margin:14px 0;
+  }
+  .title-bar span{
+    display:inline-block;
+    border:1px solid var(--line);
+    padding:4px 22px;
+    font-weight:bold;
+    letter-spacing:3px;
+    font-size:16px;
+  }
+  .meta{
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    margin-bottom:12px;
+    font-size:14px;
+  }
+  .meta label{
+    font-weight:bold;
+    margin-right:6px;
+  }
+  .meta input{
+    border:none;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+    padding:2px 4px;
+    font-family:inherit;
+  }
+  .meta .date-field input{width:150px;}
+  .meta .cust-field input{width:260px;}
+  .vehicle{
+    margin-bottom:14px;
+    font-size:14px;
+  }
+  .vehicle label{font-weight:bold;margin-right:6px;}
+  .vehicle input{
+    border:none;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+    padding:2px 4px;
+    width:100%;
+    font-family:inherit;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin-bottom:10px;
+  }
+  th,td{
+    border:1px solid var(--line);
+    padding:6px 8px;
+    font-size:13.5px;
+  }
+  th{
+    background:#f2f2f2;
+    text-align:center;
+  }
+  td input{
+    width:100%;
+    border:none;
+    font-size:13.5px;
+    font-family:inherit;
+    text-align:center;
+  }
+  td.desc input{text-align:left;}
+  td.amt{text-align:right;}
+  td.amt input{text-align:right;}
+  .row-actions{text-align:center;}
+  .row-actions button{
+    border:none;
+    background:#eee;
+    cursor:pointer;
+    border-radius:3px;
+    padding:2px 6px;
+    font-size:12px;
+  }
+  .row-actions button:hover{background:#ddd;}
+  .totals{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:6px;
+  }
+  .totals table{width:280px;}
+  .totals td{font-size:14px;}
+  .totals td.label{font-weight:bold;text-align:right;}
+  .totals td.value{text-align:right;width:110px;}
+  .totals tr.grand td{font-weight:bold;font-size:16px;border-top:2px solid var(--line);}
+  .toolbar{
+    max-width:850px;
+    margin:14px auto 0;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:flex-end;
+  }
+  .toolbar button, .btn{
+    padding:9px 18px;
+    font-size:14px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  #addRowBtn{background:#e5e7eb;color:#111;}
+  #addRowBtn:hover{background:#d1d5db;}
+  #newBtn{background:#e5e7eb;color:#111;}
+  #newBtn:hover{background:#d1d5db;}
+  #reportsBtn{background:#0f766e;color:#fff;}
+  #reportsBtn:hover{background:#0d5f58;}
+  #saveBtn{background:#2563eb;color:#fff;}
+  #saveBtn:hover{background:#1d4ed8;}
+  #pdfBtn{background:#7c3aed;color:#fff;}
+  #pdfBtn:hover{background:#6d28d9;}
+  #printBtn{background:var(--accent);color:#fff;}
+  #printBtn:hover{background:#991b1b;}
+  .footer-note{
+    margin-top:16px;
+    font-size:12px;
+    color:var(--muted);
+    text-align:center;
+  }
+
+  /* Saved reports page */
+  .reports-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .reports-head h2{
+    margin:0;
+    font-size:20px;
+    letter-spacing:2px;
+  }
+  #closeBtn{background:var(--accent);color:#fff;}
+  #closeBtn:hover{background:#991b1b;}
+  .open-btn{
+    background:#2563eb;
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    padding:5px 14px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .open-btn:hover{background:#1d4ed8;}
+  .del-btn{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    padding:5px 14px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    margin-left:4px;
+  }
+  .del-btn:hover{background:#991b1b;}
+  #reportsTable td{text-align:center;}
+  #reportsTable td.left{text-align:left;}
+  #reportsTable td.right{text-align:right;}
+  .empty-msg{
+    text-align:center;
+    color:var(--muted);
+    padding:30px 0;
+    font-size:14px;
+  }
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#111;
+    color:#fff;
+    padding:10px 20px;
+    border-radius:6px;
+    font-size:14px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s;
+  }
+  .toast.show{opacity:.95;}
+
+  @media print{
+    body{background:#fff;padding:0;}
+    .toolbar, .toast, #reportsPage{display:none !important;}
+    .sheet{border:none;max-width:100%;padding:0;}
+    .row-actions{display:none;}
+    th.actions-col, td.row-actions{display:none;}
+  }
+  .pdf-btn{
+    background:#7c3aed;
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    padding:5px 14px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    margin-left:4px;
+  }
+  .pdf-btn:hover{background:#6d28d9;}
+  .pdf-mode .row-actions, .pdf-mode th.actions-col{display:none;}
+</style>
+</head>
+<body>
+
+<!-- ================= PAGE 1 : ESTIMATION ================= -->
+<div id="estimationPage">
+  <div class="sheet">
+    <div class="header">
+      <h1>RB MOTORS</h1>
+      <div class="tagline">MULTI BRAND CAR CARE</div>
+      <div class="addr">
+        No. 109-B Keela Ambigapuram, Kalkandar Kottai Main Road, Trichy - 620004<br>
+        Mobile: 8778734866, 9080352608 &nbsp;|&nbsp; 0431-2444771
+      </div>
+    </div>
+
+    <div class="title-bar"><span>ESTIMATION</span></div>
+
+    <div class="meta">
+      <div class="date-field">
+        <label>DATE:</label>
+        <input type="date" id="estDate">
+      </div>
+      <div class="cust-field">
+        <label>CUSTOMER NAME:</label>
+        <input type="text" id="custName" placeholder="Enter customer name">
+      </div>
+    </div>
+
+    <div class="vehicle">
+      <label>VEHICLE DETAILS:</label>
+      <input type="text" id="vehicleDetails" placeholder="Make, model, registration number">
+    </div>
+
+    <table id="itemsTable">
+      <thead>
+        <tr>
+          <th style="width:6%;">SL NO</th>
+          <th style="width:32%;">DESCRIPTION</th>
+          <th style="width:12%;">QTY</th>
+          <th style="width:17%;">RATE</th>
+          <th style="width:17%;">TOTAL AMOUNT</th>
+          <th class="actions-col" style="width:8%;"></th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody">
+        <!-- rows injected by JS -->
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <table>
+        <tr>
+          <td class="label">GRAND TOTAL</td>
+          <td class="value" id="grandTotal">0.00</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="footer-note">Thank you for choosing RB Motors. This is a computer generated estimation.</div>
+  </div>
+
+  <div class="toolbar">
+    <button id="newBtn" onclick="newEstimation()">New</button>
+    <button id="addRowBtn" onclick="addRow()">+ Add Row</button>
+    <button id="reportsBtn" onclick="showReports()">Saved Reports</button>
+    <button id="saveBtn" onclick="saveReport()">Save Report</button>
+    <button id="pdfBtn" onclick="downloadPDF()">Save PDF</button>
+    <button id="printBtn" onclick="window.print()">Print</button>
+  </div>
+</div>
+
+<!-- ================= PAGE 2 : SAVED REPORTS ================= -->
+<div id="reportsPage" class="hidden">
+  <div class="sheet">
+    <div class="header">
+      <h1>RB MOTORS</h1>
+      <div class="tagline">MULTI BRAND CAR CARE</div>
+    </div>
+
+    <div class="reports-head">
+      <h2>SAVED REPORTS</h2>
+      <button class="btn" id="closeBtn" onclick="closeReports()">Close</button>
+    </div>
+
+    <table id="reportsTable">
+      <thead>
+        <tr>
+          <th style="width:6%;">SL NO</th>
+          <th style="width:16%;">DATE</th>
+          <th style="width:21%;">CUSTOMER NAME</th>
+          <th style="width:19%;">VEHICLE DETAILS</th>
+          <th style="width:14%;">GRAND TOTAL</th>
+          <th style="width:28%;">ACTION</th>
+        </tr>
+      </thead>
+      <tbody id="reportsBody"></tbody>
+    </table>
+    <div id="emptyMsg" class="empty-msg hidden">No saved reports yet.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+const STORE_KEY = 'rbmotors_reports';
+let rowCount = 0;
+let currentId = null;   // id of the saved report currently loaded (null = new)
+
+/* ---------- Rows ---------- */
+function addRow(prefill){
+  prefill = prefill || {};
+  rowCount++;
+  const tbody = document.getElementById('itemsBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="text-align:center;">${rowCount}</td>
+    <td class="desc"><input type="text" placeholder="Item / service description"></td>
+    <td><input type="number" min="0" value="1" oninput="calcRow(this)"></td>
+    <td><input type="number" min="0" step="0.01" value="0" oninput="calcRow(this)"></td>
+    <td class="amt"><input type="text" readonly value="0.00"></td>
+    <td class="row-actions"><button onclick="removeRow(this)">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  if(prefill.desc !== undefined){
+    tr.cells[1].querySelector('input').value = prefill.desc;
+    tr.cells[2].querySelector('input').value = prefill.qty;
+    tr.cells[3].querySelector('input').value = prefill.rate;
+    calcRow(tr.cells[2].querySelector('input'));
+  }
+}
+
+function removeRow(btn){
+  const tbody = document.getElementById('itemsBody');
+  if(tbody.rows.length <= 1) return;
+  btn.closest('tr').remove();
+  renumberRows();
+  calcGrandTotal();
+}
+
+function renumberRows(){
+  const tbody = document.getElementById('itemsBody');
+  rowCount = 0;
+  [...tbody.rows].forEach(row=>{
+    rowCount++;
+    row.cells[0].textContent = rowCount;
+  });
+}
+
+function calcRow(input){
+  const tr = input.closest('tr');
+  const qty = parseFloat(tr.cells[2].querySelector('input').value) || 0;
+  const rate = parseFloat(tr.cells[3].querySelector('input').value) || 0;
+  const total = qty * rate;
+  tr.cells[4].querySelector('input').value = total.toFixed(2);
+  calcGrandTotal();
+}
+
+function calcGrandTotal(){
+  const tbody = document.getElementById('itemsBody');
+  let grand = 0;
+  [...tbody.rows].forEach(row=>{
+    grand += parseFloat(row.cells[4].querySelector('input').value) || 0;
+  });
+  document.getElementById('grandTotal').textContent = grand.toFixed(2);
+}
+
+/* ---------- Storage helpers ---------- */
+function getReports(){
+  try{
+    return JSON.parse(localStorage.getItem(STORE_KEY)) || [];
+  }catch(e){
+    return [];
+  }
+}
+
+function setReports(list){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(list));
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------- Save / New ---------- */
+function collectForm(){
+  const items = [...document.getElementById('itemsBody').rows].map(row=>({
+    desc: row.cells[1].querySelector('input').value,
+    qty: row.cells[2].querySelector('input').value,
+    rate: row.cells[3].querySelector('input').value
+  }));
+  return {
+    date: document.getElementById('estDate').value,
+    customer: document.getElementById('custName').value.trim(),
+    vehicle: document.getElementById('vehicleDetails').value.trim(),
+    total: document.getElementById('grandTotal').textContent,
+    items: items
+  };
+}
+
+function saveReport(){
+  const data = collectForm();
+  const list = getReports();
+  if(currentId){
+    const idx = list.findIndex(r=>r.id === currentId);
+    if(idx >= 0){
+      data.id = currentId;
+      list[idx] = data;
+    }else{
+      data.id = currentId;
+      list.push(data);
+    }
+  }else{
+    data.id = 'r' + Date.now();
+    currentId = data.id;
+    list.push(data);
+  }
+  if(setReports(list)){
+    showToast('Report saved');
+  }else{
+    showToast('Could not save (browser storage unavailable)');
+  }
+}
+
+function resetForm(){
+  document.getElementById('custName').value = '';
+  document.getElementById('vehicleDetails').value = '';
+  document.getElementById('estDate').valueAsDate = new Date();
+  document.getElementById('itemsBody').innerHTML = '';
+  rowCount = 0;
+  for(let i=0;i<5;i++) addRow();
+  calcGrandTotal();
+  currentId = null;
+}
+
+function newEstimation(){
+  resetForm();
+}
+
+/* ---------- Pages ---------- */
+function showReports(){
+  renderReports();
+  document.getElementById('estimationPage').classList.add('hidden');
+  document.getElementById('reportsPage').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function closeReports(){
+  document.getElementById('reportsPage').classList.add('hidden');
+  document.getElementById('estimationPage').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderReports(){
+  const list = getReports().slice().reverse();   // newest first
+  const body = document.getElementById('reportsBody');
+  body.innerHTML = '';
+  document.getElementById('emptyMsg').classList.toggle('hidden', list.length > 0);
+  list.forEach((r, i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td>${esc(r.date || '-')}</td>
+      <td class="left">${esc(r.customer || '-')}</td>
+      <td class="left">${esc(r.vehicle || '-')}</td>
+      <td class="right">${esc(r.total)}</td>
+      <td><button class="open-btn" onclick="openReport('${r.id}')">Open</button><button class="pdf-btn" onclick="openReport('${r.id}', true)">PDF</button><button class="del-btn" onclick="deleteReport('${r.id}')">Delete</button></td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+function deleteReport(id){
+  if(!confirm('Delete this saved report? This cannot be undone.')) return;
+  const list = getReports().filter(r=>r.id !== id);
+  if(setReports(list)){
+    if(currentId === id) currentId = null;
+    renderReports();
+    showToast('Report deleted');
+  }else{
+    showToast('Could not delete (browser storage unavailable)');
+  }
+}
+
+function openReport(id, pdf){
+  const r = getReports().find(x=>x.id === id);
+  if(!r) return;
+  document.getElementById('estDate').value = r.date || '';
+  document.getElementById('custName').value = r.customer || '';
+  document.getElementById('vehicleDetails').value = r.vehicle || '';
+  document.getElementById('itemsBody').innerHTML = '';
+  rowCount = 0;
+  (r.items.length ? r.items : [{desc:'',qty:1,rate:0}]).forEach(it=>addRow(it));
+  calcGrandTotal();
+  currentId = r.id;
+  closeReports();
+  if(pdf) setTimeout(downloadPDF, 150);
+}
+
+/* ---------- PDF ---------- */
+function downloadPDF(){
+  if(typeof html2pdf === 'undefined'){
+    showToast('PDF library not loaded - using Print dialog instead');
+    window.print();
+    return;
+  }
+  const el = document.querySelector('#estimationPage .sheet');
+  const cust = (document.getElementById('custName').value.trim() || 'Estimation').replace(/[^\w\- ]+/g,'').replace(/\s+/g,'_');
+  const date = document.getElementById('estDate').value || '';
+  const filename = 'RB_Motors_' + cust + (date ? '_' + date : '') + '.pdf';
+  document.body.classList.add('pdf-mode');
+  html2pdf().set({
+    margin: 8,
+    filename: filename,
+    image: {type:'jpeg', quality:0.98},
+    html2canvas: {scale:2, useCORS:true},
+    jsPDF: {unit:'mm', format:'a4', orientation:'portrait'}
+  }).from(el).save().then(()=>{
+    document.body.classList.remove('pdf-mode');
+    showToast('PDF saved');
+  }).catch(()=>{
+    document.body.classList.remove('pdf-mode');
+    showToast('Could not create PDF');
+  });
+}
+
+/* ---------- Init ---------- */
+for(let i=0;i<5;i++) addRow();
+document.getElementById('estDate').valueAsDate = new Date();
+</script>
+
+</body>
+</html>
